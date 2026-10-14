@@ -106,12 +106,35 @@ dialog .actions { display:flex; justify-content:flex-end; gap:8px; margin-top:18
 const $ = id => document.getElementById(id);
 let pollTimer = null, activeRunId = null;
 
+function esc(s) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// 极简 Markdown 渲染，marked.js 没加载出来时也能可读地显示报告
+function miniMd(md) {
+  let html = esc(md);
+  html = html.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g,
+    '<a href="$2" target="_blank">$1</a>');
+  html = html.replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>');
+  html = html.replace(/^### (.*)$/gm, '<h3>$1</h3>');
+  html = html.replace(/^## (.*)$/gm, '<h2>$1</h2>');
+  html = html.replace(/^# (.*)$/gm, '<h1>$1</h1>');
+  html = html.replace(/^&gt; (.*)$/gm, '<blockquote>$1</blockquote>');
+  html = html.replace(/^- (.*)$/gm, '<li>$1</li>');
+  html = html.replace(/\n{2,}/g, '<br><br>');
+  html = html.replace(/\n/g, '<br>');
+  return html;
+}
+
 function renderMarkdown(md) {
-  if (window.marked && !window.__markedFailed) return marked.parse(md);
-  const pre = document.createElement('pre');
-  pre.style.whiteSpace = 'pre-wrap';
-  pre.textContent = md;
-  return pre;
+  const box = document.createElement('div');
+  box.className = 'markdown';
+  if (window.marked && !window.__markedFailed) {
+    box.innerHTML = marked.parse(md);
+  } else {
+    box.innerHTML = miniMd(md);
+  }
+  return box;
 }
 
 async function refreshRuns() {
