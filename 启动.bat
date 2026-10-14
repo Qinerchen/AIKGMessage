@@ -1,22 +1,34 @@
 @echo off
-chcp 65001 >nul
 cd /d "%~dp0"
 
-if exist ".venv\Scripts\python.exe" (
-  start "西安公考情报平台" ".venv\Scripts\python.exe" src\api.py
-) else (
-  where uv >nul 2>nul
-  if errorlevel 1 (
-    echo 未找到 .venv 且未安装 uv，请先安装 uv：https://docs.astral.sh/uv/
-    pause
-    exit /b 1
-  )
-  start "西安公考情报平台" cmd /c "uv run python src\api.py"
-)
+rem One-click RESTART for the local GongKao info platform.
+rem 1) kill any instance already listening on port 8000
+rem 2) start a fresh server in its own window
+rem 3) open the browser
 
-echo 正在启动平台...
-timeout /t 3 /nobreak >nul
+for /f "tokens=5" %%a in ('netstat -ano ^| findstr "LISTENING" ^| findstr ":8000"') do taskkill /PID %%a /F >nul 2>&1
+ping -n 2 127.0.0.1 >nul
+
+if exist ".venv\Scripts\python.exe" goto :venv
+
+where uv >nul 2>nul
+if errorlevel 1 goto :nouv
+
+start "GongKao Platform" cmd /c "uv run python src\api.py"
+goto :open
+
+:venv
+start "GongKao Platform" ".venv\Scripts\python.exe" src\api.py
+
+:open
+echo Platform is restarting at http://127.0.0.1:8000 ...
+ping -n 4 127.0.0.1 >nul
 start "" "http://127.0.0.1:8000"
-echo 平台已启动：http://127.0.0.1:8000
-echo 关闭弹出的服务窗口即可停止平台。
-timeout /t 8 >nul
+echo Platform restarted. Close the server window to stop it.
+ping -n 7 127.0.0.1 >nul
+exit
+
+:nouv
+echo Python venv not found and uv is not installed.
+echo Install uv first: https://docs.astral.sh/uv/getting-started/installation/
+pause
