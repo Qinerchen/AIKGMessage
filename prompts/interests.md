@@ -1,11 +1,8 @@
-# Interests
+# 关注点
 
-Describe what you want the digest to prioritize - the LLM classification step
-(phase 2) scores each article against this profile. Replace the placeholder
-below with your own topics; there is nothing tech-specific about it.
+关注：西安及陕西的公务员招考、事业单位公开招聘、遴选、人才引进公告；报名与
+考试时间节点；岗位专业要求（尤其建筑学专业可报方向：住建、自然资源、规划、
+城管、工程造价、不限专业岗）；西安市政府政策文件、人事任免、政府工作报告；
+可作为申论素材与面试热点的本地民生、产业、科技创新话题。
 
-Interested in: <the topics you care about, e.g. "central-bank policy,
-inflation, energy markets">.
-
-Not interested in: <what to filter out, e.g. "celebrity finance, crypto
-price speculation">.
+不关注：娱乐八卦、与公考无关的省外社会新闻、纯科技圈资讯。

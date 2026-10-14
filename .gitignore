@@ -19,3 +19,4 @@ digest.db-journal
 .DS_Store
 .idea/
 .vscode/
+.scratch/

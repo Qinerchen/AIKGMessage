@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>西安公考情报平台</title>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"
+        onerror="window.__markedFailed=true"></script>
+<style>
+:root { --line:#e3e6ea; --muted:#6b7280; --brand:#b91c1c; --bg:#f6f7f9; }
+* { box-sizing:border-box; }
+body { margin:0; font-family:"Microsoft YaHei",system-ui,sans-serif; background:var(--bg); color:#111827; }
+header { display:flex; align-items:center; gap:12px; padding:12px 20px; background:#fff; border-bottom:1px solid var(--line); position:sticky; top:0; z-index:10; }
+header h1 { font-size:18px; margin:0 auto 0 0; }
+button { cursor:pointer; border:1px solid var(--line); background:#fff; border-radius:6px; padding:7px 14px; font-size:14px; }
+button:hover { border-color:#9ca3af; }
+button.primary { background:var(--brand); color:#fff; border-color:var(--brand); }
+button:disabled { opacity:.5; cursor:not-allowed; }
+#status { font-size:13px; color:var(--muted); min-width:180px; }
+.layout { display:flex; gap:16px; padding:16px 20px; align-items:flex-start; }
+#history { width:230px; flex:none; background:#fff; border:1px solid var(--line); border-radius:8px; padding:10px; }
+#history h3, .panel h3 { margin:4px 4px 10px; font-size:14px; color:var(--muted); }
+.run-item { padding:8px 10px; border-radius:6px; cursor:pointer; font-size:13px; border:1px solid transparent; }
+.run-item:hover { background:var(--bg); }
+.run-item.active { border-color:var(--brand); background:#fef2f2; }
+.run-item .meta { color:var(--muted); font-size:12px; margin-top:2px; }
+.ok { color:#15803d; } .fail { color:var(--brand); } .running { color:#b45309; }
+.panel { flex:1; min-width:0; }
+#report { background:#fff; border:1px solid var(--line); border-radius:8px; padding:24px 28px; min-height:300px; overflow:auto; }
+.markdown h1 { font-size:22px; border-bottom:2px solid var(--brand); padding-bottom:8px; }
+.markdown h2 { font-size:17px; margin-top:26px; border-left:4px solid var(--brand); padding-left:8px; }
+.markdown li { margin:6px 0; }
+.markdown a { color:#1d4ed8; }
+#search { background:#fff; border:1px solid var(--line); border-radius:8px; padding:14px; margin-top:16px; }
+#search .bar { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+#search input, #search select { padding:7px 10px; border:1px solid var(--line); border-radius:6px; font-size:14px; }
+#search .bar input { flex:1; min-width:200px; }
+.art-item { padding:8px 4px; border-bottom:1px dashed var(--line); font-size:14px; }
+.art-item .meta { color:var(--muted); font-size:12px; margin-top:2px; }
+.tag { display:inline-block; padding:1px 8px; border-radius:10px; font-size:12px; margin-right:8px; }
+.tag.报考 { background:#fef2f2; color:var(--brand); }
+.tag.政策 { background:#eff6ff; color:#1d4ed8; }
+.tag.申论 { background:#f0fdf4; color:#15803d; }
+dialog { border:1px solid var(--line); border-radius:10px; padding:22px; width:min(480px, 92vw); }
+dialog::backdrop { background:rgba(0,0,0,.35); }
+dialog h3 { margin-top:0; }
+dialog label { display:block; font-size:13px; color:var(--muted); margin:10px 0 4px; }
+dialog input { width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:6px; font-size:14px; }
+dialog .actions { display:flex; justify-content:flex-end; gap:8px; margin-top:18px; }
+.empty { color:var(--muted); padding:40px 0; text-align:center; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>西安公考情报平台</h1>
+  <span id="status">空闲</span>
+  <button onclick="openProfile()">我的档案</button>
+  <button class="primary" id="runBtn" onclick="startRun()">立即推送</button>
+</header>
+
+<div class="layout">
+  <aside id="history">
+    <h3>历史运行</h3>
+    <div id="runList"><div class="empty">暂无记录</div></div>
+  </aside>
+
+  <main class="panel">
+    <div id="report"><div class="empty">点击「立即推送」获取最新报考情报</div></div>
+
+    <div id="search">
+      <h3>全库检索</h3>
+      <div class="bar">
+        <input id="q" placeholder="关键词，如：事业单位" onkeydown="if(event.key==='Enter')doSearch()">
+        <select id="cat">
+          <option value="">全部分类</option>
+          <option>报考</option><option>政策</option><option>申论</option>
+        </select>
+        <select id="days">
+          <option value="7">近7天</option>
+          <option value="30" selected>近30天</option>
+          <option value="90">近90天</option>
+          <option value="3650">全部</option>
+        </select>
+        <button onclick="doSearch()">搜索</button>
+      </div>
+      <div id="artList"><div class="empty">输入条件后检索</div></div>
+    </div>
+  </main>
+</div>
+
+<dialog id="profileDlg">
+  <h3>我的档案（用于岗位推荐）</h3>
+  <label>学历</label><input id="f_degree">
+  <label>学校</label><input id="f_school">
+  <label>专业</label><input id="f_major">
+  <label>技能</label><input id="f_skills">
+  <label>备注</label><input id="f_notes">
+  <div class="actions">
+    <button onclick="profileDlg.close()">取消</button>
+    <button class="primary" onclick="saveProfile()">保存</button>
+  </div>
+</dialog>
+
+<script>
+const $ = id => document.getElementById(id);
+let pollTimer = null, activeRunId = null;
+
+function renderMarkdown(md) {
+  if (window.marked && !window.__markedFailed) return marked.parse(md);
+  const pre = document.createElement('pre');
+  pre.style.whiteSpace = 'pre-wrap';
+  pre.textContent = md;
+  return pre;
+}
+
+async function refreshRuns() {
+  const runs = await (await fetch('/api/runs')).json();
+  const box = $('runList');
+  box.innerHTML = '';
+  if (!runs.length) { box.innerHTML = '<div class="empty">暂无记录</div>'; return; }
+  for (const r of runs) {
+    const div = document.createElement('div');
+    div.className = 'run-item' + (r.id === activeRunId ? ' active' : '');
+    const started = (r.started_at || '').slice(0, 16).replace('T', ' ');
+    const cls = r.status === 'done' ? 'ok' : r.status === 'failed' ? 'fail' : 'running';
+    const label = r.status === 'done' ? `完成 · 新增${r.new_count}` :
+                  r.status === 'failed' ? '失败' : '进行中…';
+    div.innerHTML = `<div>#${r.id} <span class="${cls}">${label}</span></div>
+                     <div class="meta">${started}</div>`;
+    div.onclick = () => loadRun(r.id);
+    box.appendChild(div);
+  }
+}
+
+async function loadRun(id) {
+  activeRunId = id;
+  const run = await (await fetch('/api/runs/' + id)).json();
+  if (run.status === 'done' && run.digest_md) {
+    const el = $('report');
+    el.innerHTML = '';
+    el.appendChild(renderMarkdown(run.digest_md));
+  } else if (run.status === 'failed') {
+    $('report').innerHTML = `<div class="empty">本轮失败：${run.error || '未知错误'}</div>`;
+  } else {
+    $('report').innerHTML = '<div class="empty">进行中…</div>';
+  }
+  refreshRuns();
+}
+
+async function startRun() {
+  const res = await fetch('/api/run', { method: 'POST' });
+  if (res.status === 409) { $('status').textContent = '已有一轮推送在进行中'; return; }
+  const { id } = await res.json();
+  $('runBtn').disabled = true;
+  $('report').innerHTML = '<div class="empty">正在采集与汇总…</div>';
+  activeRunId = id;
+  pollTimer = setInterval(() => pollRun(id), 2000);
+  pollRun(id);
+}
+
+async function pollRun(id) {
+  const run = await (await fetch('/api/runs/' + id)).json();
+  $('status').textContent = run.status === 'running'
+    ? (run.stage || '进行中…')
+    : run.status === 'done' ? `完成 · 新增 ${run.new_count} 条` : '失败';
+  if (run.status === 'running') return;
+  clearInterval(pollTimer);
+  $('runBtn').disabled = false;
+  loadRun(id);
+}
+
+async function doSearch() {
+  const params = new URLSearchParams({
+    q: $('q').value, category: $('cat').value, days: $('days').value,
+  });
+  const arts = await (await fetch('/api/articles?' + params)).json();
+  const box = $('artList');
+  box.innerHTML = arts.length ? '' : '<div class="empty">没有匹配结果</div>';
+  for (const a of arts) {
+    const div = document.createElement('div');
+    div.className = 'art-item';
+    div.innerHTML = `
+      <span class="tag ${a.category || '申论'}">${a.category || '未分类'}</span>
+      <a href="${a.url}" target="_blank">${a.title}</a>
+      <div class="meta">${a.source_name}　${a.published_at || ''}</div>`;
+    box.appendChild(div);
+  }
+}
+
+async function openProfile() {
+  const p = await (await fetch('/api/profile')).json();
+  $('f_degree').value = p.degree || ''; $('f_school').value = p.school || '';
+  $('f_major').value = p.major || '';   $('f_skills').value = p.skills || '';
+  $('f_notes').value = p.notes || '';
+  $('profileDlg').showModal();
+}
+
+async function saveProfile() {
+  const body = {
+    degree: $('f_degree').value, school: $('f_school').value,
+    major: $('f_major').value, skills: $('f_skills').value,
+    notes: $('f_notes').value,
+  };
+  await fetch('/api/profile', { method: 'PUT',
+    headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) });
+  $('profileDlg').close();
+}
+
+// 初次进入：加载历史，并展示最近一次完成的报告
+(async function init() {
+  const runs = await (await fetch('/api/runs')).json();
+  await refreshRuns();
+  const last = runs.find(r => r.status === 'done');
+  if (last) loadRun(last.id);
+})();
+</script>
+</body>
+</html>

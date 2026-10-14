@@ -1,8 +1,5 @@
-# Your feeds - one URL per line, lines starting with # are ignored.
-# While this file has no active entries, the bundled defaults are used
-# (see DEFAULT_FEEDS in src/ingest.py).
-#
-# Ideas:
-# https://www.theverge.com/rss/ai-artificial-intelligence/index.xml
-# https://huggingface.co/blog/feed.xml
-# https://www.technologyreview.com/topic/artificial-intelligence/feed
+# RSS 补充源 - 每行一个，# 开头为注释。
+# 本平台的主数据源是 src/scraper.py 内置的 xa.gov.cn 政府站点直采，
+# 不需要在这里配置；此文件留空时推送流程会自动跳过 RSS 阶段。
+# 如需补充媒体/门户源，粘贴有效的 RSS/Atom 地址即可，例如：
+# https://example.com/rss
