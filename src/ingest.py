@@ -30,7 +30,7 @@ def load_feed_urls(path: Path = FEEDS_FILE) -> list[str]:
     fall back to DEFAULT_FEEDS when the file is missing or empty."""
     if not path.exists():
         return DEFAULT_FEEDS
-    lines = path.read_text().splitlines()
+    lines = path.read_text(encoding="utf-8").splitlines()
     urls = [ln.strip() for ln in lines if ln.strip() and not ln.strip().startswith("#")]
     return urls or DEFAULT_FEEDS
 

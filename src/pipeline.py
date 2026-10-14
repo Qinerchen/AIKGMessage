@@ -53,7 +53,7 @@ def _rss_urls() -> list[str]:
     file means NO rss stage (the tech defaults would pollute this domain)."""
     if not FEEDS_FILE.exists():
         return []
-    return [ln.strip() for ln in FEEDS_FILE.read_text().splitlines()
+    return [ln.strip() for ln in FEEDS_FILE.read_text(encoding="utf-8").splitlines()
             if ln.strip() and not ln.strip().startswith("#")]
 
 

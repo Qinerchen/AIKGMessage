@@ -1,5 +1,7 @@
 @echo off
 cd /d "%~dp0"
+rem Force UTF-8 so file reads never depend on the system's ANSI codepage.
+set PYTHONUTF8=1
 
 rem Internal helper: runs the platform server in a self-healing loop.
 rem Closing this window is THE way to stop the platform.

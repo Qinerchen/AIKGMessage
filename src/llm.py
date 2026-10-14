@@ -24,7 +24,7 @@ load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 # Interests used in the classification prompt. Edit prompts/interests.md,
 # no code change needed.
-INTERESTS = (Path(__file__).resolve().parent.parent / "prompts" / "interests.md").read_text()
+INTERESTS = (Path(__file__).resolve().parent.parent / "prompts" / "interests.md").read_text(encoding="utf-8")
 
 # Zhipu GLM via its Anthropic-compatible endpoint (open.bigmodel.cn):
 # set ANTHROPIC_BASE_URL in .env and pick models with GLM_MODEL_*.

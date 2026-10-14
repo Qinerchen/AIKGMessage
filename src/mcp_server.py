@@ -50,14 +50,15 @@ def _read_feeds_file() -> list[str]:
     if not ingest.FEEDS_FILE.exists():
         return []
     return [
-        ln.strip() for ln in ingest.FEEDS_FILE.read_text().splitlines()
+        ln.strip() for ln in ingest.FEEDS_FILE.read_text(encoding="utf-8").splitlines()
         if ln.strip() and not ln.strip().startswith("#")
     ]
 
 
 def _write_feeds_file(urls: list[str]) -> None:
     body = "\n".join(urls)
-    ingest.FEEDS_FILE.write_text(FEEDS_HEADER + (body + "\n" if body else ""))
+    ingest.FEEDS_FILE.write_text(FEEDS_HEADER + (body + "\n" if body else ""),
+                                 encoding="utf-8")
 
 
 @mcp.tool()
