@@ -18,7 +18,7 @@ start "GongKao Platform" cmd /c "uv run python src\api.py & echo. & echo === Ser
 goto :check
 
 :venv
-start "GongKao Platform" cmd /c ".venv\Scripts\python.exe src\api.py & echo. & echo === Server exited (error above?) === & pause"
+start "GongKao Platform" cmd /c "run_server.bat"
 
 :check
 echo Waiting for the platform to come up...
