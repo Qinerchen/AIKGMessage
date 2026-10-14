@@ -26,8 +26,11 @@ load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 # no code change needed.
 INTERESTS = (Path(__file__).resolve().parent.parent / "prompts" / "interests.md").read_text()
 
-MODEL_CLASSIFY = "claude-haiku-4-5"
-MODEL_SUMMARIZE = "claude-opus-5"
+# Zhipu GLM via its Anthropic-compatible endpoint (open.bigmodel.cn):
+# set ANTHROPIC_BASE_URL in .env and pick models with GLM_MODEL_*.
+# Anthropic models work too - just clear ANTHROPIC_BASE_URL.
+MODEL_CLASSIFY = os.getenv("GLM_MODEL_CLASSIFY", "glm-4.5-flash")
+MODEL_SUMMARIZE = os.getenv("GLM_MODEL_SUMMARIZE", "glm-4.6")
 
 
 class ArticleClassification(BaseModel):
@@ -38,7 +41,7 @@ class ArticleClassification(BaseModel):
 
 def available() -> bool:
     """True when an API key is configured - everything else degrades to None."""
-    return bool(os.getenv("ANTHROPIC_API_KEY"))
+    return bool(os.getenv("ANTHROPIC_API_KEY") or os.getenv("ANTHROPIC_AUTH_TOKEN"))
 
 
 def _client() -> anthropic.Anthropic:
@@ -47,8 +50,11 @@ def _client() -> anthropic.Anthropic:
 
 def _ask(client: anthropic.Anthropic, model: str, prompt: str,
          max_tokens: int = 4000) -> str:
+    # GLM thinking mode burns tokens/time and can crowd out the answer
+    # entirely; disabled keeps every call fast and non-empty.
     response = client.messages.create(
         model=model, max_tokens=max_tokens,
+        thinking={"type": "disabled"},
         messages=[{"role": "user", "content": prompt}],
     )
     return "".join(block.text for block in response.content if block.type == "text")
@@ -82,7 +88,7 @@ def rank_articles(client: anthropic.Anthropic, articles: list) -> list[tuple]:
               f"并给出主题和 1-5 的价值分（5 最高）：\n{listing}\n\n"
               '只输出 JSON 数组，每项形如 {"i": 序号, "relevant": true/false, '
               '"topic": "主题", "score": 1-5}，覆盖全部文章。')
-    items = json.loads(_extract_json(_ask(client, MODEL_CLASSIFY, prompt, 8000)))
+    items = json.loads(_extract_json(_ask(client, MODEL_CLASSIFY, prompt, 12000)))
     by_index = {item["i"]: item for item in items}
     ranked = []
     for i, row in enumerate(articles):
@@ -134,7 +140,7 @@ def recommend_positions(client: anthropic.Anthropic, profile: dict,
 - **单位/岗位** —— 匹配度：高/中/低
   理由：一句话；需注意的报考条件（专业目录、学历、户籍、证书、报名截止时间）。
 只输出 Markdown，不要额外解释。"""
-    return _ask(client, MODEL_SUMMARIZE, prompt, 4000).strip()
+    return _ask(client, MODEL_SUMMARIZE, prompt, 8000).strip()
 
 
 def build_digest(articles: list, profile: dict, top_n: int = 12) -> str:
@@ -167,7 +173,7 @@ def build_digest(articles: list, profile: dict, top_n: int = 12) -> str:
 ## 四、面试热点
 预测问题 + 答题框架（1/2/3）。
 只输出 Markdown。"""
-    report = _ask(client, MODEL_SUMMARIZE, prompt, 8000).strip()
+    report = _ask(client, MODEL_SUMMARIZE, prompt, 16000).strip()
     exam_rows = [row for row in top if (row["category"] or "") == "报考"]
     try:
         recommendation = recommend_positions(client, profile, exam_rows)
